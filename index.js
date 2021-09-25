@@ -1,42 +1,30 @@
-const fs = require('fs');
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 const { Client, Collection, Intents, Interaction, VoiceChannel } = require('discord.js'); //import discord.js
-const { clientId, guildId, token } = require('./config.json');
+const { token } = require('./config.json');
 const { 	joinVoiceChannel, getVoiceConnection, createAudioPlayer,createAudioResource,entersState,StreamType,AudioPlayerStatus,VoiceConnectionStatus,} = require('@discordjs/voice');
 
 const ytdl = require('ytdl-core');
-// const ffmpeg = require('fluent-ffmpeg');
-// const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-// ffmpeg.setFfmpegPath(ffmpegPath);
 
 const myIntents = new Intents();
 myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES);
 const client = new Client({ intents: myIntents }); //create new client
 
-// const commands = [
-// 	new SlashCommandBuilder().setName('play').setDescription('Plays Music'),
-// 	new SlashCommandBuilder().setName('voice').setDescription('Add bot to voice channel'),
-// 	new SlashCommandBuilder().setName('leave').setDescription('Remove from voice chat'),
-// ]
-// .map(command => command.toJSON());
-
 
 const rest = new REST({ version: '9' }).setToken(token);
-// rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands })
-// .then(() => console.log('Successfully registered application commands.'))
-// .catch(console.error);
 
 //main audio player
 const player = createAudioPlayer();
 
+const queue = new Map();
+
 client.once('ready', async c => {
   console.log(`Ready, logged in as ${c.user.tag}`);
-  //const oldConnection = await getVoiceConnection('890977905193136269');
 });
 client.on('messageCreate', async message=>{
-  console.log('message: ', message.content);
+  if (message.author.bot) return;
+  if (!message.content.startsWith('!')) return;
+  
   if(message.content.startsWith('!play')){
     playSong(message.content);
   }
@@ -44,7 +32,8 @@ client.on('messageCreate', async message=>{
     stopSong();
   }
   else if(message.content.startsWith('!join')){
-    const channel = client.channels.cache.get('845498380041846820'); //voice channel
+    const channel = message.member.voice.channel;
+    
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: channel.guild.id,
@@ -85,5 +74,5 @@ async function stopSong(){
     console.log("error stoping audio");
   }
 }
-//make sure this line is the last line
+
 client.login(token);
